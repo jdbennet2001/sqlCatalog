@@ -4,6 +4,7 @@ const fs = require('fs')
 const {cover, pages} = require('../lib/zip');
 const {refresh, save, get} = require('../lib/dataStore')
 const {resize} = require('../lib/image')
+const {Base64} = require('js-base64');
 
 const archive = path.join(__dirname, './data/IM-007.cbz')
 
@@ -21,7 +22,7 @@ describe('Abstracted CBZ workflow routines', () => {
         expect(files).toHaveLength(23)
     });
 
-    it( 'can save a cover to disk', async() => {
+    it( 'can save a cover to db', async() => {
 
         // Get data to persist
         const page = await cover(archive);
@@ -34,19 +35,24 @@ describe('Abstracted CBZ workflow routines', () => {
         await save( archive, contents.length, page)
 
         // Get it again
-        let rows = await get(archive);
+        const name = path.basename(archive)
+        let rows = await get(name);
 
-        const [row,] = rows;
-        // let binData = new Buffer(row.cover, 'base64')
-        // fs.writeFileSync( 'bar.jpg', binData)
-        
+        try{
+
+            const [row,] = rows;
+            fs.writeFileSync( 'bar.jpg', row.cover)
+        }
+        catch(err){
+            console.log( `Decode error: ${err}`)
+        }
         expect(rows).toHaveLength(1);
     })
 
     it( 'can resize a cover', async () => {
         const page = await cover(archive);
         const thumbnail = await resize(page)
-        // fs.writeFileSync( 'th.jpg', thumbnail);
+        fs.writeFileSync( 'th.jpg', thumbnail);
         expect(thumbnail).toBeDefined();
     })
 
